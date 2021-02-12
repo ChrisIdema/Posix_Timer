@@ -22,6 +22,8 @@
 
 #include "timer.h"
 
+#define TEST_COUNT 200
+
 
 static void semphore_setter(timer_argv_t sem_p){
 	sem_post(sem_p);
@@ -40,14 +42,14 @@ static void* timed_thread(void *threadid){
         pthread_exit("Timer create failed");
     }
 
-	struct timespec ts[101];
+	struct timespec ts[TEST_COUNT+1];
 
 	fn_timer_start(p_timer, 1);  
 
     sem_wait(&sem);//ignore first event for more stable timing 
 
 	int i;
-	for(i=0;i<101;++i){
+	for(i=0;i<(TEST_COUNT+1);++i){
 		sem_wait(&sem);
         //usleep(1000-75);//very unstable, and a lot of drift
 		clock_gettime(CLOCK_REALTIME, &ts[i]);
@@ -58,14 +60,14 @@ static void* timed_thread(void *threadid){
 
     printf("timer values (us):\n");
     int t0_us = ts[0].tv_sec * 1000000 + ts[0].tv_nsec /1000;
-	for(i=0;i<100;++i){
+	for(i=0;i<TEST_COUNT;++i){
         int t_us = ts[i+1].tv_sec * 1000000 + ts[i+1].tv_nsec /1000 - t0_us;
 		printf("%d\n",t_us);
 	}
 
     printf("timer errors (us):\n");
     int min=0,max=0;
-	for(i=0;i<100;++i){
+	for(i=0;i<TEST_COUNT;++i){
         int t_us = ts[i+1].tv_sec * 1000000 + ts[i+1].tv_nsec /1000 - t0_us;
         int error_us = t_us -(i+1)*1000;
         if(error_us < min){
